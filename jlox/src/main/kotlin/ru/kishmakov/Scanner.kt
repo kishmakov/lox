@@ -1,5 +1,5 @@
 package ru.kishmakov
 
-class Scanner(source: String) {
-    fun scanTokens(): List<Token> = listOf("2", "3", "9").map { Token(it) }
+class Scanner(private val source: String) {
+    fun scanTokens(): List<Token> = source.split(" ").map { Token(it) }
 }
