@@ -7,7 +7,7 @@ sealed class RunResult {
 
 class Lox {
     fun run(source: String): RunResult {
-        val scanner = Scanner(source)
+        val scanner = Scanner(source, this)
         val tokens: List<Token> = scanner.scanTokens()
 
         if (hadError) return RunResult.Error
@@ -16,7 +16,7 @@ class Lox {
 
         // For now, just print the tokens.
         for (token in tokens) {
-            println(token.str)
+            println(token)
         }
 
         return RunResult.Ok
@@ -32,9 +32,5 @@ class Lox {
         hadError = true
     }
 
-    companion object {
-        var hadError = false
-
-        val instance = Lox()
-    }
+    var hadError = false
 }

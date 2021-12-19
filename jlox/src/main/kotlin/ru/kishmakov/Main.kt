@@ -9,19 +9,21 @@ import kotlin.system.exitProcess
 
 @Throws(IOException::class)
 fun runPrompt() {
+    val lox = Lox()
     val input = InputStreamReader(System.`in`)
     val reader = BufferedReader(input)
     while (true) {
         print("> ")
         val line = reader.readLine() ?: break
-        Lox.instance.run(line)
+        lox.run(line)
     }
 }
 
 @Throws(IOException::class)
 fun runFile(path: String) {
+    val lox = Lox()
     val bytes = Files.readAllBytes(Paths.get(path))
-    val result = Lox.instance.run(bytes.toString(Charsets.UTF_8))
+    val result = lox.run(bytes.toString(Charsets.UTF_8))
 
     if (result == RunResult.Error) exitProcess(65)
 }
