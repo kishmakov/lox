@@ -42,8 +42,12 @@ class Scanner(private val source: String, private val lox: Lox) {
                     addToken(TokenType.SLASH)
                 }
             }
-            ' ', '\r', '\t' -> {}
+            ' ', '\r', '\t' -> {
+            }
             '\n' -> line++
+            '"' -> string()
+            in '0'..'9' -> number()
+            in 'a'..'z', in 'A'..'Z', '_' -> identifier()
             else -> lox.error(line, "Unexpected character.")
         }
     }
@@ -60,6 +64,8 @@ class Scanner(private val source: String, private val lox: Lox) {
 
     private fun peek() = if (isAtEnd()) '\u0000' else source[current]
 
+    private fun peekNext() = if (current + 1 >= source.length) '\u0000' else source[current + 1]
+
     private fun addToken(type: TokenType) {
         addToken(type, null)
     }
@@ -68,4 +74,63 @@ class Scanner(private val source: String, private val lox: Lox) {
         val text = source.substring(start, current)
         tokens.add(Token(type, text, literal, line))
     }
+
+    private fun string() {
+        while (peek() != '"' && !isAtEnd()) {
+            if (peek() == '\n') line++
+            advance()
+        }
+
+        if (isAtEnd()) {
+            lox.error(line, "Unterminated string.")
+            return
+        }
+
+        advance() // The closing ".
+
+        val value = source.substring(start + 1, current - 1) // Trim the surrounding quotes.
+        addToken(TokenType.STRING, value)
+    }
+
+    private fun number() {
+        while (peek() in '0'..'9') advance()
+
+        if (peek() == '.' && peekNext() in '0'..'9') { // Look for a fractional part.
+            advance() // Consume the "."
+            while (peek() in '0'..'9') advance()
+        }
+
+        addToken(TokenType.NUMBER, source.substring(start, current).toDouble())
+    }
+
+    private fun identifier() {
+        while (isAlphaNumeric(peek())) advance()
+        val text = source.substring(start, current)
+        addToken(keywords[text] ?: TokenType.IDENTIFIER)
+    }
+
+    companion object {
+        private fun isAlphaNumeric(c: Char) = c in '0'..'9' || c in 'a'..'z' || c in 'A'..'Z' || c == '_'
+
+        private val keywords = mapOf(
+            "and" to TokenType.AND,
+            "class" to TokenType.CLASS,
+            "else" to TokenType.ELSE,
+            "false" to TokenType.FALSE,
+            "for" to TokenType.FOR,
+            "fun" to TokenType.FUN,
+            "if" to TokenType.IF,
+            "nil" to TokenType.NIL,
+            "or" to TokenType.OR,
+            "print" to TokenType.PRINT,
+            "return" to TokenType.RETURN,
+            "super" to TokenType.SUPER,
+            "this" to TokenType.THIS,
+            "true" to TokenType.TRUE,
+            "var" to TokenType.VAR,
+            "while" to TokenType.WHILE
+        )        
+    }
 }
+
+
