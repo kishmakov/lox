@@ -4,18 +4,25 @@ package ru.kishmakov
 sealed class RunResult {
     object Ok : RunResult()
     object Error: RunResult()
+    object RuntimeError: RunResult()
 }
 
 class Lox {
+    private var hadError = false
+    private var hadRuntimeError = false
+    private val interpreter = Interpreter(this)
+
     fun run(source: String): RunResult {
         val scanner = Scanner(source, this)
-        val tokens: List<Token> = scanner.scanTokens()
+        val tokens = scanner.scanTokens()
         val parser = Parser(tokens, this)
         val expression = parser.parse()
 
         if (hadError) return RunResult.Error
+        if (hadRuntimeError) return RunResult.RuntimeError
 
-        println(AstPrinter().print(expression!!))
+        interpreter.interpret(expression!!)
+        // println(AstPrinter().print(expression!!))
 
         return RunResult.Ok
     }
@@ -32,11 +39,14 @@ class Lox {
         }
     }
 
+    fun runtimeError(error: RuntimeError) {
+        System.err.println("${error.message}\n[line ${error.token.line}]")
+        hadRuntimeError = true
+    }
+
     private fun report(line: Int, where: String, message: String) {
         System.err.println("[line $line] Error$where: $message")
 
         hadError = true
     }
-
-    var hadError = false
 }

@@ -26,6 +26,7 @@ fun runFile(path: String) {
     val result = lox.run(bytes.toString(Charsets.UTF_8))
 
     if (result == RunResult.Error) exitProcess(65)
+    if (result == RunResult.RuntimeError) exitProcess(70)
 }
 
 
