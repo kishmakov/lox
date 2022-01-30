@@ -7,6 +7,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.system.exitProcess
 
+
 @Throws(IOException::class)
 fun runPrompt() {
     val lox = Lox()
@@ -15,7 +16,11 @@ fun runPrompt() {
     while (true) {
         print("> ")
         val line = reader.readLine() ?: break
-        lox.run(line)
+        val result = lox.run(line)
+
+        when (result) {
+            RunResult.Error -> println("Got an error: " + result.toString())
+        }
     }
 }
 

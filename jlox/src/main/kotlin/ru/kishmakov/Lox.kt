@@ -16,12 +16,12 @@ class Lox {
         val scanner = Scanner(source, this)
         val tokens = scanner.scanTokens()
         val parser = Parser(tokens, this)
-        val expression = parser.parse()
+        val statements = parser.parse()
 
         if (hadError) return RunResult.Error
         if (hadRuntimeError) return RunResult.RuntimeError
 
-        interpreter.interpret(expression!!)
+        interpreter.interpret(statements)
         // println(AstPrinter().print(expression!!))
 
         return RunResult.Ok

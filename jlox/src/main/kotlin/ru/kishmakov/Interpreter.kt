@@ -3,14 +3,21 @@ package ru.kishmakov
 
 class RuntimeError(val token: Token, message: String?) : RuntimeException(message)
 
-class Interpreter(private val lox: Lox): Visitor<Any?> {
-    fun interpret(expression: Expr) {
+class Interpreter(private val lox: Lox) :
+    Expr.Visitor<Any?>,
+    Stmt.Visitor<Unit> {
+    fun interpret(statements: List<Stmt>) {
         try {
-            val value = evaluate(expression)
-            println(stringify(value))
+            for (statement in statements) {
+                execute(statement)
+            }
         } catch (error: RuntimeError) {
             lox.runtimeError(error)
         }
+    }
+
+    private fun execute(statement: Stmt) {
+        statement.accept(this)
     }
 
     override fun visitBinaryExpr(expr: Binary): Any? {
@@ -52,7 +59,7 @@ class Interpreter(private val lox: Lox): Visitor<Any?> {
                 return when {
                     left is Double && right is Double -> left + right
                     left is String && right is String -> left + right
-                    else -> throw RuntimeError(expr.operator,"Operands must be two numbers or two strings.")
+                    else -> throw RuntimeError(expr.operator, "Operands must be two numbers or two strings.")
                 }
             }
         }
@@ -75,6 +82,15 @@ class Interpreter(private val lox: Lox): Visitor<Any?> {
         }
 
         return null // Unreachable.
+    }
+
+    override fun visitExpressionStmt(stmt: Stmt.Expression) {
+        evaluate(stmt.expression)
+    }
+
+    override fun visitPrintStmt(stmt: Stmt.Print) {
+        val value = evaluate(stmt.expression)
+        println(stringify(value))
     }
 
     private fun isTruthy(right: Any?): Boolean = when (right) {

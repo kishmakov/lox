@@ -1,6 +1,7 @@
 package ru.kishmakov
 
-internal class AstPrinter : Visitor<String> {
+
+internal class AstPrinter : Expr.Visitor<String> {
     fun print(expr: Expr): String = expr.accept(this)
 
     override fun visitBinaryExpr(expr: Binary) = parenthesize(expr.operator.lexeme, expr.left, expr.right)
