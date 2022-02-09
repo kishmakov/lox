@@ -7,9 +7,28 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
     fun parse(): List<Stmt> {
         val statements = ArrayList<Stmt>()
         while (!isAtEnd()) {
-            statements.add(statement())
+            declaration()?.also { statements.add(it) }
         }
         return statements
+    }
+
+    private fun declaration(): Stmt? {
+        return try {
+            if (match(TokenType.VAR)) varDeclaration() else statement()
+        } catch (error: ParseError) {
+            synchronize()
+            null
+        }
+    }
+
+    private fun varDeclaration(): Stmt {
+        val name = consume(TokenType.IDENTIFIER, "Expect variable name.")
+        var initializer: Expr? = null
+        if (match(TokenType.EQUAL)) {
+            initializer = expression()
+        }
+        consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.")
+        return Stmt.Var(name, initializer!!)
     }
 
     private fun statement(): Stmt = when {
@@ -27,7 +46,7 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
         while (match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL)) {
             val operator = previous()
             val right = comparison()
-            expr = Binary(expr, operator, right)
+            expr = Expr.Binary(expr, operator, right)
         }
 
         return expr
@@ -38,7 +57,7 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
         while (match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL)) {
             val operator = previous()
             val right = term()
-            expr = Binary(expr, operator, right)
+            expr = Expr.Binary(expr, operator, right)
         }
         return expr
     }
@@ -48,7 +67,7 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
         while (match(TokenType.MINUS, TokenType.PLUS)) {
             val operator = previous()
             val right = factor()
-            expr = Binary(expr, operator, right)
+            expr = Expr.Binary(expr, operator, right)
         }
         return expr
     }
@@ -58,7 +77,7 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
         while (match(TokenType.SLASH, TokenType.STAR)) {
             val operator = previous()
             val right: Expr = unary()
-            expr = Binary(expr, operator, right)
+            expr = Expr.Binary(expr, operator, right)
         }
         return expr
     }
@@ -67,22 +86,30 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
         if (match(TokenType.BANG, TokenType.MINUS)) {
             val operator = previous()
             val right = unary()
-            return Unary(operator, right)
+            return Expr.Unary(operator, right)
         }
         return primary()
     }
 
     private fun primary(): Expr {
-        if (match(TokenType.FALSE)) return Literal(false)
-        if (match(TokenType.TRUE)) return Literal(true)
-        if (match(TokenType.NIL)) return Literal(null)
+        if (match(TokenType.FALSE)) return Expr.Literal(false)
+
+        if (match(TokenType.TRUE)) return Expr.Literal(true)
+
+        if (match(TokenType.NIL)) return Expr.Literal(null)
+
         if (match(TokenType.NUMBER, TokenType.STRING)) {
-            return Literal(previous().literal)
+            return Expr.Literal(previous().literal)
         }
+
+        if (match(TokenType.IDENTIFIER)) {
+            return Expr.Variable(previous())
+        }
+
         if (match(TokenType.LEFT_PAREN)) {
             val expr = expression()
             consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")
-            return Grouping(expr)
+            return Expr.Grouping(expr)
         }
 
         throw error(peek(), "Expect expression.");

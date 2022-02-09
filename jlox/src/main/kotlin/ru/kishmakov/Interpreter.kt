@@ -1,11 +1,12 @@
 package ru.kishmakov
 
 
-class RuntimeError(val token: Token, message: String?) : RuntimeException(message)
-
 class Interpreter(private val lox: Lox) :
     Expr.Visitor<Any?>,
     Stmt.Visitor<Unit> {
+
+    private val environment = Environment()
+
     fun interpret(statements: List<Stmt>) {
         try {
             for (statement in statements) {
@@ -20,7 +21,7 @@ class Interpreter(private val lox: Lox) :
         statement.accept(this)
     }
 
-    override fun visitBinaryExpr(expr: Binary): Any? {
+    override fun visitBinaryExpr(expr: Expr.Binary): Any? {
         val left = evaluate(expr.left)
         val right = evaluate(expr.right)
 
@@ -67,11 +68,11 @@ class Interpreter(private val lox: Lox) :
         return null // Unreachable.
     }
 
-    override fun visitGroupingExpr(expr: Grouping): Any? = evaluate(expr.expression)
+    override fun visitGroupingExpr(expr: Expr.Grouping): Any? = evaluate(expr.expression)
 
-    override fun visitLiteralExpr(expr: Literal): Any? = expr.value
+    override fun visitLiteralExpr(expr: Expr.Literal): Any? = expr.value
 
-    override fun visitUnaryExpr(expr: Unary): Any? {
+    override fun visitUnaryExpr(expr: Expr.Unary): Any? {
         val right = evaluate(expr.right)
         when (expr.operator.type) {
             TokenType.BANG -> return !isTruthy(right)
@@ -84,6 +85,8 @@ class Interpreter(private val lox: Lox) :
         return null // Unreachable.
     }
 
+    override fun visitVariableExpr(expr: Expr.Variable) = environment[expr.name]
+
     override fun visitExpressionStmt(stmt: Stmt.Expression) {
         evaluate(stmt.expression)
     }
@@ -91,6 +94,15 @@ class Interpreter(private val lox: Lox) :
     override fun visitPrintStmt(stmt: Stmt.Print) {
         val value = evaluate(stmt.expression)
         println(stringify(value))
+    }
+
+    override fun visitVarStmt(stmt: Stmt.Var) {
+        val value = when (stmt.initializer) {
+            null -> null
+            else -> evaluate(stmt.initializer)
+        }
+
+        environment.define(stmt.name.lexeme, value)
     }
 
     private fun isTruthy(right: Any?): Boolean = when (right) {
@@ -127,5 +139,21 @@ class Interpreter(private val lox: Lox) :
             text
         }
         else -> obj.toString()
+    }
+}
+
+class RuntimeError(val token: Token, message: String?) : RuntimeException(message)
+
+internal class Environment {
+    private val values = HashMap<String, Any?>()
+
+    fun define(name: String, value: Any?) { values[name] = value }
+
+    operator fun get(name: Token): Any? {
+        if (values.containsKey(name.lexeme)) {
+            return values[name.lexeme]
+        }
+
+        throw RuntimeError(name, "Undefined variable '${name.lexeme}'.")
     }
 }
