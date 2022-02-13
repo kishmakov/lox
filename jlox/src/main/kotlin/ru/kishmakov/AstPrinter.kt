@@ -4,6 +4,10 @@ package ru.kishmakov
 internal class AstPrinter : Expr.Visitor<String> {
     fun print(expr: Expr): String = expr.accept(this)
 
+    override fun visitAssignExpr(expr: Expr.Assign): String {
+        TODO("Not yet implemented")
+    }
+
     override fun visitBinaryExpr(expr: Expr.Binary) = parenthesize(expr.operator.lexeme, expr.left, expr.right)
 
     override fun visitGroupingExpr(expr: Expr.Grouping) = parenthesize("group", expr.expression)

@@ -1,5 +1,7 @@
 package ru.kishmakov
 
+import ru.kishmakov.Expr.Assign
+
 
 class Interpreter(private val lox: Lox) :
     Expr.Visitor<Any?>,
@@ -19,6 +21,12 @@ class Interpreter(private val lox: Lox) :
 
     private fun execute(statement: Stmt) {
         statement.accept(this)
+    }
+
+    override fun visitAssignExpr(expr: Assign): Any? {
+        val value = evaluate(expr.value)
+        environment.assign(expr.name, value)
+        return value
     }
 
     override fun visitBinaryExpr(expr: Expr.Binary): Any? {
@@ -145,13 +153,41 @@ class Interpreter(private val lox: Lox) :
 class RuntimeError(val token: Token, message: String?) : RuntimeException(message)
 
 internal class Environment {
+    private val enclosing: Environment?
+
+    constructor() {
+        enclosing = null
+    }
+
+    constructor(enclosing: Environment) {
+        this.enclosing = enclosing
+    }
+
     private val values = HashMap<String, Any?>()
 
     fun define(name: String, value: Any?) { values[name] = value }
 
+    fun assign(name: Token, value: Any?) {
+        if (values.containsKey(name.lexeme)) {
+            values[name.lexeme] = value
+            return
+        }
+
+        if (enclosing != null) {
+            enclosing.assign(name, value)
+            return
+        }
+
+        throw RuntimeError(name, "Undefined variable '${name.lexeme}'.")
+    }
+
     operator fun get(name: Token): Any? {
         if (values.containsKey(name.lexeme)) {
             return values[name.lexeme]
+        }
+
+        if (enclosing != null) {
+            return enclosing[name]
         }
 
         throw RuntimeError(name, "Undefined variable '${name.lexeme}'.")
