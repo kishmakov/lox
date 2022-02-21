@@ -14,6 +14,15 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
         return statements
     }
 
+    private fun block(): List<Stmt> {
+        val statements: MutableList<Stmt> = ArrayList()
+        while (!check(TokenType.RIGHT_BRACE) && !isAtEnd()) {
+            declaration()?.let{ statements.add(it) }
+        }
+        consume(TokenType.RIGHT_BRACE, "Expect '}' after block.")
+        return statements
+    }
+
     private fun declaration(): Stmt? {
         return try {
             if (match(TokenType.VAR)) varDeclaration() else statement()
@@ -35,6 +44,7 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
 
     private fun statement(): Stmt = when {
         match(TokenType.PRINT) -> printStatement()
+        match(TokenType.LEFT_BRACE) -> Stmt.Block(block())
         else -> expressionStatement()
     }
 
