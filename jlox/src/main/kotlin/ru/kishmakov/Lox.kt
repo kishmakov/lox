@@ -49,4 +49,9 @@ class Lox {
 
         hadError = true
     }
+
+    fun dismissErrors() {
+        hadError = false
+        hadRuntimeError = false
+    }
 }

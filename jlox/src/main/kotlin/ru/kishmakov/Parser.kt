@@ -43,6 +43,7 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
     }
 
     private fun statement(): Stmt = when {
+        match(TokenType.IF) -> ifStatement()
         match(TokenType.PRINT) -> printStatement()
         match(TokenType.LEFT_BRACE) -> Stmt.Block(block())
         else -> expressionStatement()
@@ -139,6 +140,17 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
         }
 
         throw error(peek(), "Expect expression.");
+    }
+
+    private fun ifStatement(): Stmt {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.")
+        val condition = expression()
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.")
+
+        val thenBranch = statement()
+        val elseBranch = if (match(TokenType.ELSE)) statement() else null
+
+        return Stmt.If(condition, thenBranch, elseBranch)
     }
 
     private fun printStatement(): Stmt {

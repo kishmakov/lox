@@ -16,11 +16,13 @@ fun runPrompt() {
     while (true) {
         print("> ")
         val line = reader.readLine() ?: break
-        val result = lox.run(line)
 
-        when (result) {
-            RunResult.Error -> println("Got an error: " + result.toString())
+        when (val result = lox.run(line)) {
+            RunResult.Error -> println("Got an error: $result")
+            RunResult.RuntimeError -> println("Got a runtime error: $result")
         }
+
+        lox.dismissErrors()
     }
 }
 
