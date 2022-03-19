@@ -2,6 +2,7 @@ package ru.kishmakov
 
 import ru.kishmakov.Expr.Assign
 import ru.kishmakov.Expr.Logical
+import ru.kishmakov.Stmt.While
 
 
 class Interpreter(private val lox: Lox) :
@@ -126,6 +127,12 @@ class Interpreter(private val lox: Lox) :
     override fun visitPrintStmt(stmt: Stmt.Print) {
         val value = evaluate(stmt.expression)
         println(stringify(value))
+    }
+
+    override fun visitWhileStmt(stmt: While) {
+        while (isTruthy(evaluate(stmt.condition))) {
+            execute(stmt.body)
+        }
     }
 
     override fun visitVarStmt(stmt: Stmt.Var) {

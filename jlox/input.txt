@@ -1,26 +1,7 @@
-var a = "global a";
-var b = "global b";
-var c = "global c";
+var i = 1;
 
-if ((a != b) and (2 > 3)) {
-  print("1");
-} else {
-  print("2");
+while (i < 10) {
+    print("i is ");
+    print(i);
+    i = i + 1;
 }
-
-{
-  var a = "outer a";
-  var b = "outer b";
-  {
-    var a = "inner a";
-    print a;
-    print b;
-    print c;
-  }
-  print a;
-  print b;
-  print c;
-}
-print a;
-print b;
-print c;

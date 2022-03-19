@@ -1,8 +1,5 @@
 package ru.kishmakov
 
-import ru.kishmakov.Expr.Assign
-import ru.kishmakov.Expr.Logical
-
 
 internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
     private var current = 0
@@ -46,6 +43,7 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
     private fun statement(): Stmt = when {
         match(TokenType.IF) -> ifStatement()
         match(TokenType.PRINT) -> printStatement()
+        match(TokenType.WHILE) -> whileStatement()
         match(TokenType.LEFT_BRACE) -> Stmt.Block(block())
         else -> expressionStatement()
     }
@@ -61,7 +59,7 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
             val equals = previous()
             val value = assignment()
             if (expr is Expr.Variable) {
-                return Assign(expr.name, value)
+                return Expr.Assign(expr.name, value)
             }
             error(equals, "Invalid assignment target.")
         }
@@ -73,7 +71,7 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
         while (match(TokenType.OR)) {
             val operator = previous()
             val right: Expr = and()
-            expr = Logical(expr, operator, right)
+            expr = Expr.Logical(expr, operator, right)
         }
         return expr
     }
@@ -83,7 +81,7 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
         while (match(TokenType.AND)) {
             val operator = previous()
             val right = equality()
-            expr = Logical(expr, operator, right)
+            expr = Expr.Logical(expr, operator, right)
         }
         return expr
     }
@@ -178,6 +176,14 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
         val value = expression()
         consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return Stmt.Print(value)
+    }
+
+    private fun whileStatement(): Stmt {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.")
+        val condition = expression()
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.")
+        val body = statement()
+        return Stmt.While(condition, body)
     }
 
     private fun expressionStatement(): Stmt {
