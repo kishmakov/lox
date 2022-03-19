@@ -28,4 +28,8 @@ internal class AstPrinter : Expr.Visitor<String> {
         }
         append(")")
     }.toString()
+
+    override fun visitLogicalExpr(expr: Expr.Logical): String {
+        TODO("Not yet implemented")
+    }
 }

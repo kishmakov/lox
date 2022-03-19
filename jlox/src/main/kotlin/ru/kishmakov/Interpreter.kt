@@ -1,6 +1,7 @@
 package ru.kishmakov
 
 import ru.kishmakov.Expr.Assign
+import ru.kishmakov.Expr.Logical
 
 
 class Interpreter(private val lox: Lox) :
@@ -79,6 +80,17 @@ class Interpreter(private val lox: Lox) :
     override fun visitGroupingExpr(expr: Expr.Grouping): Any? = evaluate(expr.expression)
 
     override fun visitLiteralExpr(expr: Expr.Literal): Any? = expr.value
+
+    override fun visitLogicalExpr(expr: Logical): Any? {
+        val left = evaluate(expr.left)
+
+        return when {
+            expr.operator.type == TokenType.OR && isTruthy(left) -> left
+            expr.operator.type == TokenType.AND && !isTruthy(left) -> left
+            else -> evaluate(expr.right)
+        }
+    }
+
 
     override fun visitUnaryExpr(expr: Expr.Unary): Any? {
         val right = evaluate(expr.right)

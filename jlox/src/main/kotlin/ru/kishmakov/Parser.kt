@@ -1,6 +1,7 @@
 package ru.kishmakov
 
 import ru.kishmakov.Expr.Assign
+import ru.kishmakov.Expr.Logical
 
 
 internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
@@ -54,15 +55,35 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
     }
 
     private fun assignment(): Expr {
-        val expr = equality()
+        val expr = or()
+
         if (match(TokenType.EQUAL)) {
             val equals = previous()
             val value = assignment()
             if (expr is Expr.Variable) {
-                val name = expr.name
-                return Assign(name, value)
+                return Assign(expr.name, value)
             }
             error(equals, "Invalid assignment target.")
+        }
+        return expr
+    }
+
+    private fun or(): Expr {
+        var expr = and()
+        while (match(TokenType.OR)) {
+            val operator = previous()
+            val right: Expr = and()
+            expr = Logical(expr, operator, right)
+        }
+        return expr
+    }
+
+    private fun and(): Expr {
+        var expr = equality()
+        while (match(TokenType.AND)) {
+            val operator = previous()
+            val right = equality()
+            expr = Logical(expr, operator, right)
         }
         return expr
     }
