@@ -1,5 +1,7 @@
 package ru.kishmakov
 
+import java.util.*
+
 
 internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
     private var current = 0
@@ -32,15 +34,13 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
 
     private fun varDeclaration(): Stmt {
         val name = consume(TokenType.IDENTIFIER, "Expect variable name.")
-        var initializer: Expr? = null
-        if (match(TokenType.EQUAL)) {
-            initializer = expression()
-        }
+        val initializer = if (match(TokenType.EQUAL)) expression() else null
         consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.")
-        return Stmt.Var(name, initializer!!)
+        return Stmt.Var(name, initializer)
     }
 
     private fun statement(): Stmt = when {
+        match(TokenType.FOR) -> forStatement()
         match(TokenType.IF) -> ifStatement()
         match(TokenType.PRINT) -> printStatement()
         match(TokenType.WHILE) -> whileStatement()
@@ -160,6 +160,38 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
 
         throw error(peek(), "Expect expression.");
     }
+
+    private fun forStatement(): Stmt {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.")
+        val initializer = when {
+            match(TokenType.SEMICOLON) -> null
+            match(TokenType.VAR) -> varDeclaration()
+            else -> expressionStatement()
+        }
+
+        val condition = if (!check(TokenType.SEMICOLON)) expression() else Expr.Literal(true)
+
+        consume(TokenType.SEMICOLON, "Expect ';' after loop condition.")
+
+        val increment = if (!check(TokenType.RIGHT_PAREN)) expression() else null
+
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.")
+
+        var body = statement()
+
+        if (increment != null) {
+            body = Stmt.Block(listOf(body, Stmt.Expression(increment)))
+        }
+
+        body = Stmt.While(condition, body)
+
+        if (initializer != null) {
+            body = Stmt.Block(listOf(initializer, body))
+        }
+
+        return body
+    }
+
 
     private fun ifStatement(): Stmt {
         consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.")
