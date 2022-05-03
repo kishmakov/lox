@@ -10,6 +10,10 @@ internal class AstPrinter : Expr.Visitor<String> {
 
     override fun visitBinaryExpr(expr: Expr.Binary) = parenthesize(expr.operator.lexeme, expr.left, expr.right)
 
+    override fun visitCallExpr(expr: Expr.Call): String {
+        TODO("Not yet implemented")
+    }
+
     override fun visitGroupingExpr(expr: Expr.Grouping) = parenthesize("group", expr.expression)
 
     override fun visitLiteralExpr(expr: Expr.Literal) = expr.value?.toString() ?: "nil"

@@ -9,7 +9,20 @@ class Interpreter(private val lox: Lox) :
     Expr.Visitor<Any?>,
     Stmt.Visitor<Unit> {
 
-    private var environment = Environment()
+    private val globals = Environment()
+    private var environment = globals
+
+    init {
+        globals.define("clock", object : LoxCallable {
+            override val arity = 0
+
+            override fun call(interpreter: Interpreter, arguments: List<Any?>): Double {
+                return System.currentTimeMillis().toDouble() / 1000.0
+            }
+
+            override fun toString() = "<native fn>"
+        })
+    }
 
     fun interpret(statements: List<Stmt>) {
         try {
@@ -78,6 +91,22 @@ class Interpreter(private val lox: Lox) :
         return null // Unreachable.
     }
 
+    override fun visitCallExpr(expr: Expr.Call): Any? {
+        val function = evaluate(expr.callee) as? LoxCallable ?:
+            throw RuntimeError(expr.paren, "Can only call functions and classes.")
+
+        if (expr.arguments.size != function.arity) {
+            throw RuntimeError(
+                expr.paren, "Expected ${function.arity} arguments but got " +
+                        expr.arguments.size.toString() + "."
+            )
+        }
+
+        val arguments = expr.arguments.map { evaluate(it) }
+
+        return function.call(this, arguments)
+    }
+
     override fun visitGroupingExpr(expr: Expr.Grouping): Any? = evaluate(expr.expression)
 
     override fun visitLiteralExpr(expr: Expr.Literal): Any? = expr.value
@@ -116,6 +145,10 @@ class Interpreter(private val lox: Lox) :
         evaluate(stmt.expression)
     }
 
+    override fun visitFunctionStmt(stmt: Stmt.Function) {
+        TODO("Not yet implemented")
+    }
+    
     override fun visitIfStmt(stmt: Stmt.If) {
         if (isTruthy(evaluate(stmt.condition))) {
             execute(stmt.thenBranch)
