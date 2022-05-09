@@ -64,6 +64,7 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
         match(TokenType.FOR) -> forStatement()
         match(TokenType.IF) -> ifStatement()
         match(TokenType.PRINT) -> printStatement()
+        match(TokenType.RETURN) -> returnStatement()
         match(TokenType.WHILE) -> whileStatement()
         match(TokenType.LEFT_BRACE) -> Stmt.Block(block())
         else -> expressionStatement()
@@ -262,6 +263,15 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
         consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return Stmt.Print(value)
     }
+
+    private fun returnStatement(): Stmt {
+        val token = previous()
+        val value = if (!check(TokenType.SEMICOLON)) expression() else null
+        consume(TokenType.SEMICOLON, "Expect ';' after return value.")
+
+        return Stmt.Return(token, value)
+    }
+
 
     private fun whileStatement(): Stmt {
         consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.")

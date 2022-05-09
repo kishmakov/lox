@@ -121,7 +121,6 @@ class Interpreter(private val lox: Lox) :
         }
     }
 
-
     override fun visitUnaryExpr(expr: Expr.Unary): Any? {
         val right = evaluate(expr.right)
         when (expr.operator.type) {
@@ -163,10 +162,9 @@ class Interpreter(private val lox: Lox) :
         println(stringify(value))
     }
 
-    override fun visitWhileStmt(stmt: While) {
-        while (isTruthy(evaluate(stmt.condition))) {
-            execute(stmt.body)
-        }
+    override fun visitReturnStmt(stmt: Stmt.Return) {
+        val value = if (stmt.value != null) evaluate(stmt.value) else null
+        throw Return(value)
     }
 
     override fun visitVarStmt(stmt: Stmt.Var) {
@@ -176,6 +174,12 @@ class Interpreter(private val lox: Lox) :
         }
 
         environment.define(stmt.name.lexeme, value)
+    }
+
+    override fun visitWhileStmt(stmt: While) {
+        while (isTruthy(evaluate(stmt.condition))) {
+            execute(stmt.body)
+        }
     }
 
     private fun isTruthy(right: Any?): Boolean = when (right) {
