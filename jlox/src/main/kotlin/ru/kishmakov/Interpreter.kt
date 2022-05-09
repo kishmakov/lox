@@ -9,7 +9,7 @@ class Interpreter(private val lox: Lox) :
     Expr.Visitor<Any?>,
     Stmt.Visitor<Unit> {
 
-    private val globals = Environment()
+    val globals = Environment()
     private var environment = globals
 
     init {
@@ -146,7 +146,8 @@ class Interpreter(private val lox: Lox) :
     }
 
     override fun visitFunctionStmt(stmt: Stmt.Function) {
-        TODO("Not yet implemented")
+        val function = LoxFunction(stmt)
+        environment.define(stmt.name.lexeme, function)
     }
     
     override fun visitIfStmt(stmt: Stmt.If) {
@@ -189,7 +190,7 @@ class Interpreter(private val lox: Lox) :
 
     private fun evaluate(expr: Expr): Any? = expr.accept(this)
 
-    private fun executeBlock(statements: List<Stmt>, environment: Environment) {
+    internal fun executeBlock(statements: List<Stmt>, environment: Environment) {
         val previous = this.environment
         try {
             this.environment = environment

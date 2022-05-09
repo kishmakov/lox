@@ -22,7 +22,7 @@ sealed class Stmt {
         override fun <R> accept(visitor: Visitor<R>) = visitor.visitExpressionStmt(this)
     }
 
-    class Function(val name: Token, val params: List<Token>, body: List<Stmt>) : Stmt() {
+    class Function(val name: Token, val params: List<Token>, val body: List<Stmt>) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>) = visitor.visitFunctionStmt(this)
     }
 
