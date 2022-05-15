@@ -7,6 +7,7 @@ sealed class Expr {
         fun visitBinaryExpr(expr: Binary): R
         fun visitCallExpr(expr: Call): R
         fun visitGroupingExpr(expr: Grouping): R
+        fun visitLambdaExpr(expr: Lambda): R
         fun visitLiteralExpr(expr: Literal): R
         fun visitLogicalExpr(expr: Logical): R
         fun visitUnaryExpr(expr: Unary): R
@@ -29,6 +30,10 @@ sealed class Expr {
 
     class Grouping(val expression: Expr) : Expr() {
         override fun <R> accept(visitor: Visitor<R>) = visitor.visitGroupingExpr(this)
+    }
+
+    class Lambda(val params: List<Token>, val body: List<Stmt>) : Expr() {
+        override fun <R> accept(visitor: Visitor<R>) = visitor.visitLambdaExpr(this)
     }
 
     class Literal(val value: Any?) : Expr() {

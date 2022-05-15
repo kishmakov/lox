@@ -109,6 +109,12 @@ class Interpreter(private val lox: Lox) :
 
     override fun visitGroupingExpr(expr: Expr.Grouping): Any? = evaluate(expr.expression)
 
+    override fun visitLambdaExpr(expr: Expr.Lambda): Any {
+        val tempToken = Token(TokenType.FUN, "<anonymous>", null, 0)
+        val tempStmt = Stmt.Function(tempToken, expr.params, expr.body)
+        return LoxFunction(tempStmt, environment)
+    }
+
     override fun visitLiteralExpr(expr: Expr.Literal): Any? = expr.value
 
     override fun visitLogicalExpr(expr: Logical): Any? {
