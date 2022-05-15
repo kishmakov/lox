@@ -34,7 +34,7 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
         }
     }
 
-    private fun function(kind: String): Stmt.Function? {
+    private fun function(kind: String): Stmt {
         val name = consume(TokenType.IDENTIFIER, "Expect $kind name.")
         consume(TokenType.LEFT_PAREN, "Expect '(' after $kind name.")
         val parameters = ArrayList<Token>()
