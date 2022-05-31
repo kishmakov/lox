@@ -9,8 +9,9 @@ class Interpreter(private val lox: Lox) :
     Expr.Visitor<Any?>,
     Stmt.Visitor<Unit> {
 
-    val globals = Environment()
+    private val globals = Environment()
     private var environment = globals
+    private val locals = HashMap<Expr, Int>()
 
     init {
         globals.define("clock", object : LoxCallable {
@@ -40,7 +41,14 @@ class Interpreter(private val lox: Lox) :
 
     override fun visitAssignExpr(expr: Assign): Any? {
         val value = evaluate(expr.value)
-        environment.assign(expr.name, value)
+
+        val distance = locals[expr]
+        if (distance != null) {
+            environment.assignAt(distance, expr.name, value)
+        } else {
+            globals.assign(expr.name, value)
+        }
+
         return value
     }
 
@@ -134,7 +142,7 @@ class Interpreter(private val lox: Lox) :
         return null // Unreachable.
     }
 
-    override fun visitVariableExpr(expr: Expr.Variable) = environment[expr.name]
+    override fun visitVariableExpr(expr: Expr.Variable) = lookUpVariable(expr.name, expr)
 
     override fun visitBlockStmt(stmt: Stmt.Block) {
         executeBlock(stmt.statements, Environment(environment))
@@ -230,6 +238,17 @@ class Interpreter(private val lox: Lox) :
         }
         else -> obj.toString()
     }
+
+    fun resolve(expr: Expr, depth: Int) {
+        locals.put(expr, depth)
+    }
+
+    private fun lookUpVariable(name: Token, expr: Expr): Any? {
+        val distance = locals[expr] ?: return globals[name]
+        return  environment.getAt(distance, name.lexeme)
+    }
+
+
 }
 
 class RuntimeError(val token: Token, message: String?) : RuntimeException(message)
@@ -273,5 +292,20 @@ class Environment {
         }
 
         throw RuntimeError(name, "Undefined variable '${name.lexeme}'.")
+    }
+
+    fun getAt(distance: Int, name: String): Any? = ancestor(distance).values[name]
+
+    fun assignAt(distance: Int, name: Token, value: Any?) {
+        ancestor(distance).values[name.lexeme] = value
+    }
+
+    private fun ancestor(distance: Int): Environment {
+        var environment: Environment = this
+        for (i in 0 until distance) {
+            environment = environment.enclosing!!
+        }
+
+        return environment
     }
 }

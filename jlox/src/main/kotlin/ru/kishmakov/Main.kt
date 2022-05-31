@@ -19,7 +19,9 @@ fun runPrompt() {
 
         when (val result = lox.run(line)) {
             RunResult.Error -> println("Got an error: $result")
+            RunResult.ResolveError -> println("Got an resolve error: $result")
             RunResult.RuntimeError -> println("Got a runtime error: $result")
+            else -> {}
         }
 
         lox.dismissErrors()
@@ -30,10 +32,13 @@ fun runPrompt() {
 fun runFile(path: String) {
     val lox = Lox()
     val bytes = Files.readAllBytes(Paths.get(path))
-    val result = lox.run(bytes.toString(Charsets.UTF_8))
 
-    if (result == RunResult.Error) exitProcess(65)
-    if (result == RunResult.RuntimeError) exitProcess(70)
+
+    when (lox.run(bytes.toString(Charsets.UTF_8))) {
+        RunResult.Error,
+        RunResult.ResolveError -> exitProcess(65)
+        RunResult.RuntimeError -> exitProcess(70)
+    }
 }
 
 

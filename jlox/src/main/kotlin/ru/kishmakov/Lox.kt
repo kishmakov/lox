@@ -4,6 +4,7 @@ package ru.kishmakov
 sealed class RunResult {
     object Ok : RunResult()
     object Error: RunResult()
+    object ResolveError: RunResult()
     object RuntimeError: RunResult()
 }
 
@@ -20,6 +21,11 @@ class Lox {
 
         if (hadError) return RunResult.Error
         if (hadRuntimeError) return RunResult.RuntimeError
+
+        val resolver = Resolver(interpreter, this)
+        resolver.resolve(statements)
+
+        if (hadError) return RunResult.ResolveError
 
         interpreter.interpret(statements)
         // println(AstPrinter().print(expression!!))
