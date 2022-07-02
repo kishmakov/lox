@@ -64,6 +64,10 @@ class Resolver(private val interpreter: Interpreter, private val lox: Lox) :
         expr.arguments.forEach { resolveExpr(it) }
     }
 
+    override fun visitGetExpr(expr: Expr.Get) {
+        resolveExpr(expr.obj)
+    }
+
     override fun visitGroupingExpr(expr: Expr.Grouping) = resolveExpr(expr.expression)
 
     override fun visitLiteralExpr(expr: Expr.Literal) {}
@@ -71,6 +75,11 @@ class Resolver(private val interpreter: Interpreter, private val lox: Lox) :
     override fun visitLogicalExpr(expr: Expr.Logical) {
         resolveExpr(expr.left)
         resolveExpr(expr.right)
+    }
+
+    override fun visitSetExpr(expr: Expr.Set) {
+        resolveExpr(expr.value)
+        resolveExpr(expr.obj)
     }
 
     override fun visitUnaryExpr(expr: Expr.Unary) = resolveExpr(expr.right)
@@ -87,6 +96,16 @@ class Resolver(private val interpreter: Interpreter, private val lox: Lox) :
         beginScope()
         resolve(stmt.statements)
         endScope()
+    }
+
+    override fun visitClassStmt(stmt: Stmt.Class) {
+        declare(stmt.name)
+        for (method in stmt.methods) {
+            val declaration: FunctionType = FunctionType.METHOD
+            resolveFunction(method, declaration)
+        }
+
+        define(stmt.name)
     }
 
     override fun visitExpressionStmt(stmt: Stmt.Expression) = resolveExpr(stmt.expression)
@@ -126,5 +145,7 @@ class Resolver(private val interpreter: Interpreter, private val lox: Lox) :
 }
 
 private enum class FunctionType {
-    NONE, FUNCTION
+    NONE,
+    FUNCTION,
+    METHOD
 }

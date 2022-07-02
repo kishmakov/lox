@@ -100,8 +100,10 @@ class Interpreter(private val lox: Lox) :
     }
 
     override fun visitCallExpr(expr: Expr.Call): Any? {
-        val function = evaluate(expr.callee) as? LoxCallable ?:
-            throw RuntimeError(expr.paren, "Can only call functions and classes.")
+        val function = evaluate(expr.callee) as? LoxCallable ?: throw RuntimeError(
+            expr.paren,
+            "Can only call functions and classes."
+        )
 
         if (expr.arguments.size != function.arity) {
             throw RuntimeError(
@@ -113,6 +115,13 @@ class Interpreter(private val lox: Lox) :
         val arguments = expr.arguments.map { evaluate(it) }
 
         return function.call(this, arguments)
+    }
+
+    override fun visitGetExpr(expr: Expr.Get): Any {
+        return (evaluate(expr.obj) as? LoxInstance)?.get(expr.name) ?: throw RuntimeError(
+            expr.name,
+            "Only instances have properties."
+        )
     }
 
     override fun visitGroupingExpr(expr: Expr.Grouping): Any? = evaluate(expr.expression)
@@ -127,6 +136,18 @@ class Interpreter(private val lox: Lox) :
             expr.operator.type == TokenType.AND && !isTruthy(left) -> left
             else -> evaluate(expr.right)
         }
+    }
+
+    override fun visitSetExpr(expr: Expr.Set): Any? {
+        val obj = evaluate(expr.obj) as? LoxInstance
+            ?: throw RuntimeError(
+                expr.name,
+                "Only instances have fields."
+            )
+
+        val value = evaluate(expr.value)
+        obj.set(expr.name, value)
+        return value
     }
 
     override fun visitUnaryExpr(expr: Expr.Unary): Any? {
@@ -148,6 +169,19 @@ class Interpreter(private val lox: Lox) :
         executeBlock(stmt.statements, Environment(environment))
     }
 
+    override fun visitClassStmt(stmt: Stmt.Class) {
+        environment.define(stmt.name.lexeme, null)
+
+        val methods = HashMap<String, LoxFunction>()
+        for (method in stmt.methods) {
+            val function = LoxFunction(method, environment)
+            methods[method.name.lexeme] = function
+        }
+
+        val klass = LoxClass(stmt.name.lexeme, methods)
+        environment.assign(stmt.name, klass)
+    }
+
     override fun visitExpressionStmt(stmt: Stmt.Expression) {
         evaluate(stmt.expression)
     }
@@ -156,7 +190,7 @@ class Interpreter(private val lox: Lox) :
         val function = LoxFunction(stmt, environment)
         environment.define(stmt.name.lexeme, function)
     }
-    
+
     override fun visitIfStmt(stmt: Stmt.If) {
         if (isTruthy(evaluate(stmt.condition))) {
             execute(stmt.thenBranch)
@@ -245,7 +279,7 @@ class Interpreter(private val lox: Lox) :
 
     private fun lookUpVariable(name: Token, expr: Expr): Any? {
         val distance = locals[expr] ?: return globals[name]
-        return  environment.getAt(distance, name.lexeme)
+        return environment.getAt(distance, name.lexeme)
     }
 
 
@@ -266,7 +300,9 @@ class Environment {
 
     private val values = HashMap<String, Any?>()
 
-    fun define(name: String, value: Any?) { values[name] = value }
+    fun define(name: String, value: Any?) {
+        values[name] = value
+    }
 
     fun assign(name: Token, value: Any?) {
         if (values.containsKey(name.lexeme)) {
