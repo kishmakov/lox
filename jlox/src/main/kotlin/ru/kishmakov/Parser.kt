@@ -221,6 +221,8 @@ internal class Parser(private val tokens: List<Token>, private val lox: Lox) {
             return Expr.Literal(previous().literal)
         }
 
+        if (match(TokenType.THIS)) return Expr.This(previous())
+
         if (match(TokenType.IDENTIFIER)) {
             return Expr.Variable(previous())
         }

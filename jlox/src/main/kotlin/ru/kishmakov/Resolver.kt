@@ -82,6 +82,8 @@ class Resolver(private val interpreter: Interpreter, private val lox: Lox) :
         resolveExpr(expr.obj)
     }
 
+    override fun visitThisExpr(expr: Expr.This) = resolveLocal(expr, expr.keyword)
+
     override fun visitUnaryExpr(expr: Expr.Unary) = resolveExpr(expr.right)
 
     override fun visitVariableExpr(expr: Expr.Variable) {
@@ -100,12 +102,18 @@ class Resolver(private val interpreter: Interpreter, private val lox: Lox) :
 
     override fun visitClassStmt(stmt: Stmt.Class) {
         declare(stmt.name)
+
+        beginScope();
+        scopes.lastOrNull()?.put("this", true)
+
         for (method in stmt.methods) {
             val declaration: FunctionType = FunctionType.METHOD
             resolveFunction(method, declaration)
         }
 
         define(stmt.name)
+
+        endScope()
     }
 
     override fun visitExpressionStmt(stmt: Stmt.Expression) = resolveExpr(stmt.expression)

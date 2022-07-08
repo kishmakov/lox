@@ -150,6 +150,8 @@ class Interpreter(private val lox: Lox) :
         return value
     }
 
+    override fun visitThisExpr(expr: Expr.This): Any? = lookUpVariable(expr.keyword, expr)
+
     override fun visitUnaryExpr(expr: Expr.Unary): Any? {
         val right = evaluate(expr.right)
         when (expr.operator.type) {

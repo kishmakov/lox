@@ -26,7 +26,7 @@ class LoxInstance(private val klass: LoxClass) {
             return fields[name.lexeme]
         }
 
-        klass.findMethod(name.lexeme)?.let { return it }
+        klass.findMethod(name.lexeme)?.let { return it.bind(this) }
 
         throw RuntimeError(name, "Undefined property '" + name.lexeme + "'.")
     }
