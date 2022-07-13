@@ -1,10 +1,12 @@
-class Cake {
-  taste() {
-    var adjective = "delicious";
-    print "The " + this.flavor + " cake is " + adjective + "!";
+class Thing {
+  getCallback() {
+    fun localFunction() {
+      print this;
+    }
+
+    return localFunction;
   }
 }
 
-var cake = Cake();
-cake.flavor = "German chocolate";
-cake.taste();
+var callback = Thing().getCallback();
+callback();

@@ -6,6 +6,7 @@ class Resolver(private val interpreter: Interpreter, private val lox: Lox) :
 
     private val scopes = ArrayList<HashMap<String, Boolean>>()
     private var currentFunction: FunctionType = FunctionType.NONE
+    private var currentClass: ClassType = ClassType.NONE
 
     fun resolve(statements: List<Stmt>) = statements.forEach(::resolveStmt)
 
@@ -82,7 +83,13 @@ class Resolver(private val interpreter: Interpreter, private val lox: Lox) :
         resolveExpr(expr.obj)
     }
 
-    override fun visitThisExpr(expr: Expr.This) = resolveLocal(expr, expr.keyword)
+    override fun visitThisExpr(expr: Expr.This) {
+        if (currentClass == ClassType.NONE) {
+            lox.error(expr.keyword, "Can't use 'this' outside of a class.")
+        }
+
+        resolveLocal(expr, expr.keyword)
+    }
 
     override fun visitUnaryExpr(expr: Expr.Unary) = resolveExpr(expr.right)
 
@@ -101,8 +108,10 @@ class Resolver(private val interpreter: Interpreter, private val lox: Lox) :
     }
 
     override fun visitClassStmt(stmt: Stmt.Class) {
-        declare(stmt.name)
+        val enclosingClass = currentClass
+        currentClass = ClassType.CLASS
 
+        declare(stmt.name)
         beginScope();
         scopes.lastOrNull()?.put("this", true)
 
@@ -112,8 +121,8 @@ class Resolver(private val interpreter: Interpreter, private val lox: Lox) :
         }
 
         define(stmt.name)
-
         endScope()
+        currentClass = enclosingClass
     }
 
     override fun visitExpressionStmt(stmt: Stmt.Expression) = resolveExpr(stmt.expression)
@@ -156,4 +165,8 @@ private enum class FunctionType {
     NONE,
     FUNCTION,
     METHOD
+}
+
+private enum class ClassType {
+    NONE, CLASS
 }
